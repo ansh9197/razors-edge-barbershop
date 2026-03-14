@@ -3,9 +3,9 @@
 # ============================================================
 
 variable "aws_region" {
-  description = "AWS region (ap-south-1 = Mumbai — closest to Ludhiana)"
+  description = "AWS region (us-east-2 = Best for everyone)"
   type        = string
-  default     = "ap-south-1"
+  default     = "us-east-2"
 }
 
 variable "project_name" {

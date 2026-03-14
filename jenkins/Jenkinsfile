@@ -8,11 +8,11 @@ pipeline {
 
     environment {
         APP_NAME         = 'razors-edge'
-        DOCKER_IMAGE     = "${APP_NAME}-app"
+        DOCKER_IMAGE     = "${ razors-edge-app}-app"
         EC2_USER         = 'ubuntu'
-        EC2_HOST         = credentials('ec2-host-ip')
+        EC2_HOST         = credentials('3.22.131.66')
         SSH_KEY          = credentials('ec2-ssh-key')
-        GITHUB_REPO      = 'https://github.com/YOUR_USERNAME/razors-edge-barbershop.git'
+        GITHUB_REPO      = 'https://github.com/ansh9197/razors-edge-barbershop.git'
     }
 
     options {

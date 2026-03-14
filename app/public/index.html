@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Razor's Edge — Book Appointment</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f6f2;
+    --card: #ffffff;
+    --primary: #7c6a4e;
+    --accent: #b89a6a;
+    --accent-light: #e8ddd0;
+    --accent-lighter: #f5f0e8;
+    --text: #3a3228;
+    --muted: #9e8e7e;
+    --border: #e2d9ce;
+    --success: #6a9e7c;
+    --error: #c0674a;
+    --shadow: 0 4px 24px rgba(124,106,78,0.10);
+    --radius: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse at 10% 10%, rgba(184,154,106,0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 90%, rgba(124,106,78,0.07) 0%, transparent 50%);
+    pointer-events:none; z-index:0;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(124,106,78,0.06);
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .nav-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .nav-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); }
+  .nav-user {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--accent-lighter);
+    padding: 8px 16px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; color: var(--primary);
+    cursor: pointer;
+  }
+  .logout-btn {
+    padding: 6px 14px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    border-radius: 8px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px; color: var(--muted);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .logout-btn:hover { border-color: var(--error); color: var(--error); }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 48px 24px 32px;
+    position: relative; z-index: 1;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 6vw, 52px);
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p { font-size: 15px; color: var(--muted); }
+
+  /* FORM CONTAINER */
+  .container { max-width: 720px; margin: 0 auto; padding: 0 20px 60px; position: relative; z-index: 1; }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 36px;
+    margin-bottom: 20px;
+  }
+
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .section-head h2 {
+    font-size: 17px; font-weight: 700; color: var(--text);
+  }
+
+  label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--primary); display: block; margin-bottom: 8px;
+  }
+
+  input[type="text"], input[type="email"], input[type="date"],
+  input[type="tel"], select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px; color: var(--text);
+    background: var(--bg);
+    outline: none; transition: all 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(184,154,106,0.1);
+    background: #fff;
+  }
+  select { cursor: pointer; }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .field-row.single { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; }
+
+  .err { color: var(--error); font-size: 12px; margin-top: 4px; display: none; }
+
+  /* SERVICES */
+  .services-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  .svc-card {
+    cursor: pointer;
+    padding: 16px 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.15s;
+    background: var(--bg);
+    position: relative;
+  }
+  .svc-card:hover { border-color: var(--accent); background: var(--accent-lighter); }
+  .svc-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    box-shadow: 0 2px 12px rgba(184,154,106,0.18);
+  }
+  .svc-check {
+    position: absolute; top: 6px; right: 6px;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: none; align-items: center; justify-content: center;
+    font-size: 9px; color: #fff; font-weight: 700;
+  }
+  .svc-card.selected .svc-check { display: flex; }
+  .svc-icon { font-size: 24px; margin-bottom: 8px; }
+  .svc-name { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 4px; letter-spacing: 0.3px; }
+  .svc-price { font-size: 12px; color: var(--accent); font-weight: 600; }
+
+  /* TOTAL */
+  .total-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--accent-lighter);
+    border: 1px solid var(--accent-light);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 16px;
+  }
+  .total-bar span { font-size: 14px; color: var(--muted); font-weight: 600; }
+  .total-bar strong { font-size: 20px; color: var(--primary); font-weight: 800; }
+
+  /* PAYMENT */
+  .pay-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .pay-card {
+    cursor: pointer;
+    padding: 18px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.15s;
+    background: var(--bg);
+  }
+  .pay-card:hover { border-color: var(--accent); background: var(--accent-lighter); }
+  .pay-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    box-shadow: 0 2px 12px rgba(184,154,106,0.18);
+  }
+  .pay-icon { font-size: 28px; margin-bottom: 8px; }
+  .pay-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .pay-desc { font-size: 11px; color: var(--muted); }
+
+  /* UPI section */
+  .upi-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--accent-lighter);
+    border-radius: 10px;
+    border: 1px solid var(--accent-light);
+    display: none;
+  }
+  .upi-section.show { display: block; }
+  .upi-id {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff; padding: 12px 16px;
+    border-radius: 8px; border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  .upi-id code { font-size: 15px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+  .copy-btn {
+    padding: 6px 14px;
+    background: var(--accent);
+    color: #fff; border: none;
+    border-radius: 6px; font-family: 'Nunito', sans-serif;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* BARBER */
+  .barber-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .barber-card {
+    cursor: pointer;
+    padding: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    display: flex; align-items: center; gap: 12px;
+    transition: all 0.15s;
+    background: var(--bg);
+  }
+  .barber-card:hover { border-color: var(--accent); background: var(--accent-lighter); }
+  .barber-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .barber-avatar {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .barber-info .barber-name { font-size: 14px; font-weight: 700; color: var(--text); }
+  .barber-info .barber-tag { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* SUBMIT */
+  .submit-btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border: none; border-radius: 12px;
+    color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 17px; font-weight: 800;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(124,106,78,0.25);
+    letter-spacing: 0.3px;
+    margin-top: 8px;
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(124,106,78,0.3); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* SUCCESS */
+  .success-screen {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(248,246,242,0.97);
+    z-index: 200;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 20px;
+    text-align: center; padding: 24px;
+  }
+  .success-screen.show { display: flex; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  .success-icon {
+    width: 90px; height: 90px;
+    background: linear-gradient(135deg, #9dd4b0, #6a9e7c);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+    box-shadow: 0 8px 32px rgba(106,158,124,0.3);
+  }
+  .success-screen h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; color: var(--text);
+  }
+  .success-screen p { font-size: 15px; color: var(--muted); max-width: 360px; line-height: 1.6; }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 28px;
+    max-width: 380px; width: 100%;
+    text-align: left;
+  }
+  .summary-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .summary-row:last-child { border: none; }
+  .summary-row span:first-child { color: var(--muted); }
+  .summary-row span:last-child { font-weight: 700; color: var(--text); }
+  .summary-total span:last-child { color: var(--accent); font-size: 18px; }
+
+  .book-again-btn {
+    padding: 14px 40px;
+    border: 1.5px solid var(--accent);
+    background: transparent;
+    border-radius: 12px;
+    color: var(--primary);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .book-again-btn:hover { background: var(--accent-light); }
+
+  @media(max-width:600px) {
+    .field-row { grid-template-columns:1fr; }
+    .services-grid { grid-template-columns: repeat(2,1fr); }
+    .pay-grid { grid-template-columns: 1fr; }
+    .barber-grid { grid-template-columns: 1fr; }
+    .card { padding: 24px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">✂</div>
+    <span class="nav-title">The Razor's Edge</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="nav-user" id="navUser">📱 Loading...</div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Book Your <span>Appointment</span></h1>
+  <p>Premium grooming experience in Ludhiana, Punjab</p>
+</div>
+
+<div class="container">
+
+  <!-- Section 1: Personal Details -->
+  <div class="card">
+    <div class="section-head">
+      <div class="section-num">1</div>
+      <h2>Your Details</h2>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>First Name</label>
+        <input type="text" id="firstName" placeholder="Rahul">
+        <span class="err" id="firstNameErr">Required</span>
+      </div>
+      <div class="field">
+        <label>Last Name</label>
+        <input type="text" id="lastName" placeholder="Sharma">
+        <span class="err" id="lastNameErr">Required</span>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" id="phone" placeholder="+91 98765 43210" readonly>
+      </div>
+      <div class="field">
+        <label>Email (Optional)</label>
+        <input type="email" id="email" placeholder="rahul@email.com">
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Schedule -->
+  <div class="card">
+    <div class="section-head">
+      <div class="section-num">2</div>
+      <h2>Schedule</h2>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="date">
+        <span class="err" id="dateErr">Required</span>
+      </div>
+      <div class="field">
+        <label>Preferred Time</label>
+        <select id="time">
+          <option value="">— Select Time —</option>
+          <option>9:00 AM</option><option>9:30 AM</option>
+          <option>10:00 AM</option><option>10:30 AM</option>
+          <option>11:00 AM</option><option>11:30 AM</option>
+          <option>12:00 PM</option><option>12:30 PM</option>
+          <option>1:00 PM</option><option>1:30 PM</option>
+          <option>2:00 PM</option><option>2:30 PM</option>
+          <option>3:00 PM</option><option>3:30 PM</option>
+          <option>4:00 PM</option><option>4:30 PM</option>
+          <option>5:00 PM</option><option>5:30 PM</option>
+          <option>6:00 PM</option>
+        </select>
+        <span class="err" id="timeErr">Required</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Choose Barber -->
+  <div class="card">
+    <div class="section-head">
+      <div class="section-num">3</div>
+      <h2>Choose Your Barber</h2>
+    </div>
+    <div class="barber-grid" id="barberGrid">
+      <div class="barber-card selected" data-barber="PANKU" onclick="selectBarber(this)">
+        <div class="barber-avatar">👨</div>
+        <div class="barber-info">
+          <div class="barber-name">PANKU</div>
+          <div class="barber-tag">Senior Stylist</div>
+        </div>
+      </div>
+      <div class="barber-card" data-barber="ANSH" onclick="selectBarber(this)">
+        <div class="barber-avatar">👦</div>
+        <div class="barber-info">
+          <div class="barber-name">ANSH</div>
+          <div class="barber-tag">Fade Specialist</div>
+        </div>
+      </div>
+      <div class="barber-card" data-barber="SHANTY" onclick="selectBarber(this)">
+        <div class="barber-avatar">🧔</div>
+        <div class="barber-info">
+          <div class="barber-name">SHANTY</div>
+          <div class="barber-tag">Classic Cuts</div>
+        </div>
+      </div>
+      <div class="barber-card" data-barber="SAMMAR" onclick="selectBarber(this)">
+        <div class="barber-avatar">💈</div>
+        <div class="barber-info">
+          <div class="barber-name">SAMMAR</div>
+          <div class="barber-tag">Beard Expert</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Services -->
+  <div class="card">
+    <div class="section-head">
+      <div class="section-num">4</div>
+      <h2>Select Services</h2>
+    </div>
+    <span class="err" id="servicesErr" style="display:block;margin-bottom:12px;">Select at least one service</span>
+    <div class="services-grid">
+      <div class="svc-card" data-svc="Haircut" data-price="350" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">💈</div>
+        <div class="svc-name">Haircut</div>
+        <div class="svc-price">₹350</div>
+      </div>
+      <div class="svc-card" data-svc="Beard Trim" data-price="150" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">🧔</div>
+        <div class="svc-name">Beard Trim</div>
+        <div class="svc-price">₹150</div>
+      </div>
+      <div class="svc-card" data-svc="Hot Shave" data-price="200" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">🪒</div>
+        <div class="svc-name">Hot Shave</div>
+        <div class="svc-price">₹200</div>
+      </div>
+      <div class="svc-card" data-svc="Blow Dry" data-price="100" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">💨</div>
+        <div class="svc-name">Blow Dry</div>
+        <div class="svc-price">₹100</div>
+      </div>
+      <div class="svc-card" data-svc="Fade Cut" data-price="400" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">⚡</div>
+        <div class="svc-name">Fade Cut</div>
+        <div class="svc-price">₹400</div>
+      </div>
+      <div class="svc-card" data-svc="Hair Color" data-price="800" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">🎨</div>
+        <div class="svc-name">Hair Color</div>
+        <div class="svc-price">₹800</div>
+      </div>
+      <div class="svc-card" data-svc="Hair Wash" data-price="80" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">🚿</div>
+        <div class="svc-name">Hair Wash</div>
+        <div class="svc-price">₹80</div>
+      </div>
+      <div class="svc-card" data-svc="Kids Cut" data-price="250" onclick="toggleSvc(this)">
+        <div class="svc-check">✓</div>
+        <div class="svc-icon">👦</div>
+        <div class="svc-name">Kids Cut</div>
+        <div class="svc-price">₹250</div>
+      </div>
+    </div>
+
+    <div class="total-bar" id="totalBar" style="display:none;">
+      <span id="svcSummary">0 services selected</span>
+      <strong id="totalAmount">₹0</strong>
+    </div>
+  </div>
+
+  <!-- Section 5: Payment -->
+  <div class="card">
+    <div class="section-head">
+      <div class="section-num">5</div>
+      <h2>Payment Method</h2>
+    </div>
+    <span class="err" id="paymentErr" style="display:block;margin-bottom:12px;">Select a payment method</span>
+    <div class="pay-grid">
+      <div class="pay-card" data-pay="UPI" onclick="selectPay(this)">
+        <div class="pay-icon">📲</div>
+        <div class="pay-name">Pay via UPI</div>
+        <div class="pay-desc">GPay, PhonePe, Paytm</div>
+      </div>
+      <div class="pay-card" data-pay="Cash on App" onclick="selectPay(this)">
+        <div class="pay-icon">💵</div>
+        <div class="pay-name">Cash on App</div>
+        <div class="pay-desc">Pay digitally now</div>
+      </div>
+      <div class="pay-card" data-pay="Pay at Shop" onclick="selectPay(this)">
+        <div class="pay-icon">🏪</div>
+        <div class="pay-name">Pay at Shop</div>
+        <div class="pay-desc">Cash/Card at counter</div>
+      </div>
+    </div>
+
+    <!-- UPI Details shown when UPI selected -->
+    <div class="upi-section" id="upiSection">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:4px;">Send payment to this UPI ID:</p>
+      <div class="upi-id">
+        <code id="upiIdText">razorsedge@upi</code>
+        <button class="copy-btn" onclick="copyUPI()">Copy</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;">
+        ⚠️ Send exact amount shown above. Screenshot will be verified at shop.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 6: Notes -->
+  <div class="card">
+    <div class="section-head">
+      <div class="section-num">6</div>
+      <h2>Special Notes</h2>
+    </div>
+    <div class="field">
+      <label>Any requests or preferences?</label>
+      <textarea id="notes" placeholder="e.g. Go short on sides, keep top long, any allergies..."></textarea>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button class="submit-btn" id="submitBtn" onclick="submitBooking()">
+    Confirm Appointment
+  </button>
+
+</div>
+
+<!-- Success Screen -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">✓</div>
+  <h2>Booked!</h2>
+  <p>Your appointment is confirmed. The barber will receive all details on WhatsApp.</p>
+  <div class="summary-card" id="summaryCard"></div>
+  <button class="book-again-btn" onclick="bookAgain()">Book Another Appointment</button>
+</div>
+
+<script>
+  // Auth check
+  window.onload = () => {
+    if (!sessionStorage.getItem('loggedIn')) {
+      window.location.href = 'login.html';
+      return;
+    }
+    const phone = sessionStorage.getItem('userPhone') || '+91XXXXXXXXXX';
+    document.getElementById('navUser').textContent = '📱 ' + phone;
+    document.getElementById('phone').value = phone;
+    document.getElementById('date').min = new Date().toISOString().split('T')[0];
+  };
+
+  function logout() {
+    sessionStorage.clear();
+    window.location.href = 'login.html';
+  }
+
+  // Barber selection
+  function selectBarber(el) {
+    document.querySelectorAll('.barber-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // Service toggle
+  function toggleSvc(el) {
+    el.classList.toggle('selected');
+    document.getElementById('servicesErr').style.display = 'none';
+    updateTotal();
+  }
+
+  function updateTotal() {
+    const selected = document.querySelectorAll('.svc-card.selected');
+    const total = Array.from(selected).reduce((s,c) => s + parseInt(c.dataset.price), 0);
+    if (selected.length > 0) {
+      document.getElementById('totalBar').style.display = 'flex';
+      document.getElementById('svcSummary').textContent = `${selected.length} service${selected.length>1?'s':''} selected`;
+      document.getElementById('totalAmount').textContent = `₹${total}`;
+    } else {
+      document.getElementById('totalBar').style.display = 'none';
+    }
+    return total;
+  }
+
+  // Payment selection
+  function selectPay(el) {
+    document.querySelectorAll('.pay-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('paymentErr').style.display = 'none';
+    const pay = el.dataset.pay;
+    document.getElementById('upiSection').classList.toggle('show', pay === 'UPI');
+  }
+
+  function copyUPI() {
+    navigator.clipboard.writeText('razorsedge@upi');
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.style.background = 'var(--success)';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; }, 2000);
+  }
+
+  // WhatsApp number — CHANGE THIS
+  const BARBER_WHATSAPP = '91XXXXXXXXXX';
+
+  function submitBooking() {
+    let valid = true;
+    const errs = [
+      ['firstName','firstNameErr'],['lastName','lastNameErr'],
+      ['date','dateErr'],['time','timeErr']
+    ];
+    errs.forEach(([id,eId]) => {
+      const el = document.getElementById(id);
+      const err = document.getElementById(eId);
+      if (!el.value.trim()) { err.style.display='block'; el.style.borderColor='var(--error)'; valid=false; }
+      else { err.style.display='none'; el.style.borderColor=''; }
+    });
+
+    const services = document.querySelectorAll('.svc-card.selected');
+    if (!services.length) { document.getElementById('servicesErr').style.display='block'; valid=false; }
+
+    const payCard = document.querySelector('.pay-card.selected');
+    if (!payCard) { document.getElementById('paymentErr').style.display='block'; valid=false; }
+
+    if (!valid) return;
+
+    const barber = document.querySelector('.barber-card.selected')?.dataset.barber || 'Any';
+    const svcList = Array.from(services).map(s => `  • ${s.dataset.svc} (₹${s.dataset.price})`).join('\n');
+    const total = updateTotal();
+    const payment = payCard.dataset.pay;
+
+    const data = {
+      name: `${document.getElementById('firstName').value} ${document.getElementById('lastName').value}`,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value || 'Not provided',
+      date: document.getElementById('date').value,
+      time: document.getElementById('time').value,
+      barber, services: svcList, total, payment,
+      notes: document.getElementById('notes').value || 'None'
+    };
+
+    // Format date nicely
+    const d = new Date(data.date + 'T00:00:00');
+    const dateStr = d.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    const msg = `✂ *NEW BOOKING — The Razor's Edge*
+━━━━━━━━━━━━━━━━━━━━
+
+👤 *CUSTOMER*
+Name: ${data.name}
+Phone: ${data.phone}
+Email: ${data.email}
+
+📅 *APPOINTMENT*
+Date: ${dateStr}
+Time: ${data.time}
+Barber: ${data.barber}
+
+✂ *SERVICES*
+${data.services}
+
+💰 *TOTAL: ₹${data.total}*
+💳 *Payment: ${data.payment}*
+
+📝 *NOTES*
+${data.notes}
+
+━━━━━━━━━━━━━━━━━━━━
+🕐 Booked: ${new Date().toLocaleString('en-IN')}`;
+
+    // Save to backend
+    fetch('/api/bookings', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({...data, services: Array.from(services).map(s=>s.dataset.svc)})
+    }).catch(() => {});
+
+    // Open WhatsApp
+    window.open(`https://wa.me/${BARBER_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+
+    // Show success
+    document.getElementById('summaryCard').innerHTML = `
+      <div class="summary-row"><span>Name</span><span>${data.name}</span></div>
+      <div class="summary-row"><span>Date & Time</span><span>${data.date} · ${data.time}</span></div>
+      <div class="summary-row"><span>Barber</span><span>${data.barber}</span></div>
+      <div class="summary-row"><span>Payment</span><span>${data.payment}</span></div>
+      <div class="summary-row summary-total"><span>Total</span><span>₹${data.total}</span></div>
+    `;
+    document.getElementById('successScreen').classList.add('show');
+  }
+
+  function bookAgain() {
+    document.getElementById('successScreen').classList.remove('show');
+    document.querySelectorAll('.svc-card').forEach(c=>c.classList.remove('selected'));
+    document.querySelectorAll('.pay-card').forEach(c=>c.classList.remove('selected'));
+    document.getElementById('firstName').value = '';
+    document.getElementById('lastName').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('date').value = '';
+    document.getElementById('time').value = '';
+    document.getElementById('notes').value = '';
+    document.getElementById('totalBar').style.display = 'none';
+    document.getElementById('upiSection').classList.remove('show');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+</script>
+</body>
+</html>

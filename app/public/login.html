@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Razor's Edge — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f6f2;
+    --card: #ffffff;
+    --primary: #7c6a4e;
+    --accent: #b89a6a;
+    --accent-light: #e8ddd0;
+    --text: #3a3228;
+    --muted: #9e8e7e;
+    --border: #e2d9ce;
+    --success: #6a9e7c;
+    --error: #c0674a;
+    --shadow: 0 4px 24px rgba(124,106,78,0.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(184,154,106,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(124,106,78,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow), 0 1px 0 rgba(255,255,255,0.8) inset;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    border: 1px solid var(--border);
+  }
+  .logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 16px rgba(184,154,106,0.3);
+  }
+  .logo h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .logo p { font-size: 13px; color: var(--muted); }
+
+  .step { display: none; }
+  .step.active { display: block; }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 28px; line-height: 1.5; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .input-wrap { position: relative; margin-bottom: 20px; }
+  .prefix {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 15px; font-weight: 600; color: var(--muted);
+  }
+  input[type="tel"], input[type="text"] {
+    width: 100%;
+    padding: 14px 16px 14px 48px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+    letter-spacing: 1px;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(184,154,106,0.12);
+    background: #fff;
+  }
+
+  /* OTP input */
+  .otp-grid {
+    display: flex; gap: 10px; margin-bottom: 24px;
+  }
+  .otp-grid input {
+    width: 48px; height: 56px;
+    padding: 0;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    letter-spacing: 0;
+    transition: border 0.2s, box-shadow 0.2s;
+    flex: 1;
+  }
+  .otp-grid input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(184,154,106,0.12);
+    background: #fff;
+  }
+  .otp-grid input.filled { border-color: var(--accent); background: #fff; }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    border: none; border-radius: 12px;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(124,106,78,0.25);
+    letter-spacing: 0.3px;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,106,78,0.3); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .resend {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .resend a {
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .resend a:hover { text-decoration: underline; }
+
+  .phone-display {
+    background: var(--accent-light);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .error-msg {
+    color: var(--error);
+    font-size: 13px;
+    margin-top: -12px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .timer { font-weight: 700; color: var(--primary); }
+
+  /* Demo OTP hint */
+  .demo-hint {
+    background: linear-gradient(135deg, #f0f7f3, #e8f4ec);
+    border: 1px solid #b8ddc6;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #4a7a5c;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .demo-hint strong { font-size: 22px; letter-spacing: 4px; display: block; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">✂</div>
+    <h1>The Razor's Edge</h1>
+    <p>Premium Barbershop · Ludhiana</p>
+  </div>
+
+  <!-- Step 1: Phone Number -->
+  <div class="step active" id="step1">
+    <h2>Welcome Back 👋</h2>
+    <p class="subtitle">Enter your mobile number to book your appointment</p>
+    <label>Mobile Number</label>
+    <div class="input-wrap">
+      <span class="prefix">+91</span>
+      <input type="tel" id="phoneInput" placeholder="98765 43210" maxlength="10"
+        oninput="this.value=this.value.replace(/\D/g,'')">
+    </div>
+    <div class="error-msg" id="phoneError">Please enter a valid 10-digit number</div>
+    <button class="btn" onclick="sendOTP()">Send OTP</button>
+  </div>
+
+  <!-- Step 2: OTP Verification -->
+  <div class="step" id="step2">
+    <h2>Verify OTP 🔐</h2>
+    <p class="subtitle">Enter the 6-digit code sent to</p>
+    <div class="phone-display">📱 +91 <span id="displayPhone"></span></div>
+
+    <div class="demo-hint">
+      Demo OTP (for testing):
+      <strong id="demoOTP"></strong>
+    </div>
+
+    <label>Enter 6-Digit OTP</label>
+    <div class="otp-grid" id="otpGrid">
+      <input type="text" maxlength="1" inputmode="numeric" oninput="otpInput(this,0)">
+      <input type="text" maxlength="1" inputmode="numeric" oninput="otpInput(this,1)">
+      <input type="text" maxlength="1" inputmode="numeric" oninput="otpInput(this,2)">
+      <input type="text" maxlength="1" inputmode="numeric" oninput="otpInput(this,3)">
+      <input type="text" maxlength="1" inputmode="numeric" oninput="otpInput(this,4)">
+      <input type="text" maxlength="1" inputmode="numeric" oninput="otpInput(this,5)">
+    </div>
+    <div class="error-msg" id="otpError">Incorrect OTP. Please try again.</div>
+
+    <button class="btn" onclick="verifyOTP()" id="verifyBtn">Verify & Continue</button>
+
+    <div class="resend">
+      Didn't receive? <a onclick="resendOTP()" id="resendLink">Resend OTP</a>
+      <span id="timerWrap"> in <span class="timer" id="timer">30</span>s</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  let generatedOTP = '';
+  let phone = '';
+  let timerInterval;
+
+  function sendOTP() {
+    const input = document.getElementById('phoneInput').value;
+    if (input.length !== 10) {
+      document.getElementById('phoneError').style.display = 'block';
+      return;
+    }
+    document.getElementById('phoneError').style.display = 'none';
+    phone = input;
+
+    // Generate 6-digit OTP
+    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    document.getElementById('demoOTP').textContent = generatedOTP;
+    document.getElementById('displayPhone').textContent =
+      phone.replace(/(\d{5})(\d{5})/, '$1 $2');
+
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+
+    startTimer();
+  }
+
+  function otpInput(el, idx) {
+    el.value = el.value.replace(/\D/g,'');
+    if (el.value) {
+      el.classList.add('filled');
+      const inputs = document.querySelectorAll('#otpGrid input');
+      if (idx < 5) inputs[idx + 1].focus();
+      else verifyOTP();
+    } else {
+      el.classList.remove('filled');
+    }
+  }
+
+  function verifyOTP() {
+    const inputs = document.querySelectorAll('#otpGrid input');
+    const entered = Array.from(inputs).map(i => i.value).join('');
+    if (entered.length < 6) return;
+
+    if (entered === generatedOTP) {
+      // Save to session and redirect
+      sessionStorage.setItem('userPhone', '+91' + phone);
+      sessionStorage.setItem('loggedIn', 'true');
+      window.location.href = 'index.html';
+    } else {
+      document.getElementById('otpError').style.display = 'block';
+      inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+      inputs[0].focus();
+    }
+  }
+
+  function startTimer() {
+    let t = 30;
+    document.getElementById('resendLink').style.pointerEvents = 'none';
+    document.getElementById('resendLink').style.opacity = '0.4';
+    document.getElementById('timerWrap').style.display = 'inline';
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      document.getElementById('timer').textContent = --t;
+      if (t <= 0) {
+        clearInterval(timerInterval);
+        document.getElementById('resendLink').style.pointerEvents = 'auto';
+        document.getElementById('resendLink').style.opacity = '1';
+        document.getElementById('timerWrap').style.display = 'none';
+      }
+    }, 1000);
+  }
+
+  function resendOTP() {
+    generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    document.getElementById('demoOTP').textContent = generatedOTP;
+    document.getElementById('otpError').style.display = 'none';
+    const inputs = document.querySelectorAll('#otpGrid input');
+    inputs.forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    inputs[0].focus();
+    startTimer();
+  }
+
+  // Keyboard navigation for OTP
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Backspace') {
+      const inputs = document.querySelectorAll('#otpGrid input');
+      const focused = document.activeElement;
+      const idx = Array.from(inputs).indexOf(focused);
+      if (idx > 0 && !focused.value) inputs[idx - 1].focus();
+    }
+  });
+</script>
+</body>
+</html>

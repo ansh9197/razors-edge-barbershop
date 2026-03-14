@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.tar.gz
+*.zip
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+coverage/

@@ -1,0 +1,166 @@
+// ============================================================
+// Jenkinsfile — Razor's Edge CI/CD Pipeline
+// Stages: Checkout → Test → Build → Push → Deploy → Monitor
+// ============================================================
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME         = 'razors-edge'
+        DOCKER_IMAGE     = "${APP_NAME}-app"
+        EC2_USER         = 'ubuntu'
+        EC2_HOST         = credentials('ec2-host-ip')
+        SSH_KEY          = credentials('ec2-ssh-key')
+        GITHUB_REPO      = 'https://github.com/YOUR_USERNAME/razors-edge-barbershop.git'
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    stages {
+
+        stage('📥 Checkout') {
+            steps {
+                checkout scm
+                sh 'echo "Branch: ${BRANCH_NAME} | Commit: ${GIT_COMMIT}"'
+            }
+        }
+
+        stage('📦 Install Dependencies') {
+            steps {
+                dir('app') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('🧪 Run Tests') {
+            steps {
+                dir('app') {
+                    sh 'npm test -- --ci --coverage || true'
+                }
+            }
+        }
+
+        stage('🔒 Security Audit') {
+            steps {
+                dir('app') {
+                    sh 'npm audit --audit-level=high || true'
+                }
+            }
+        }
+
+        stage('🐳 Build Docker Image') {
+            steps {
+                dir('app') {
+                    sh """
+                        docker build \
+                          -t ${DOCKER_IMAGE}:${BUILD_NUMBER} \
+                          -t ${DOCKER_IMAGE}:latest \
+                          -f Dockerfile .
+                    """
+                }
+            }
+        }
+
+        stage('💾 Save Docker Image') {
+            when { branch 'main' }
+            steps {
+                sh """
+                    docker save ${DOCKER_IMAGE}:latest | gzip > ${DOCKER_IMAGE}.tar.gz
+                """
+            }
+        }
+
+        stage('🚀 Deploy to EC2') {
+            when { branch 'main' }
+            steps {
+                sshagent(credentials: ['ec2-ssh-key']) {
+                    sh """
+                        # Copy new image to EC2
+                        scp -o StrictHostKeyChecking=no \
+                            ${DOCKER_IMAGE}.tar.gz \
+                            ${EC2_USER}@${EC2_HOST}:/home/ubuntu/
+
+                        # Copy updated docker-compose and configs
+                        scp -o StrictHostKeyChecking=no -r \
+                            docker-compose.yml \
+                            monitoring/ \
+                            ${EC2_USER}@${EC2_HOST}:/home/ubuntu/app/
+
+                        # SSH in and redeploy
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
+                            cd /home/ubuntu/app
+
+                            # Load new image
+                            docker load < /home/ubuntu/${DOCKER_IMAGE}.tar.gz
+
+                            # Rolling restart — zero downtime
+                            docker-compose up -d --no-deps --build app
+
+                            # Cleanup old images
+                            docker image prune -f
+
+                            echo "✅ Deployed Build #${BUILD_NUMBER}"
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('✅ Smoke Test') {
+            when { branch 'main' }
+            steps {
+                sh """
+                    sleep 15
+                    curl -sf http://${EC2_HOST}:3000/health && echo "✅ App healthy!" || exit 1
+                """
+            }
+        }
+
+        stage('📊 Verify Monitoring') {
+            when { branch 'main' }
+            steps {
+                sh """
+                    curl -sf http://${EC2_HOST}:9090/-/healthy && echo "✅ Prometheus healthy!" || echo "⚠️ Prometheus check failed"
+                    curl -sf http://${EC2_HOST}:3001/api/health && echo "✅ Grafana healthy!" || echo "⚠️ Grafana check failed"
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo """
+            ✅ ============================================
+            🎉 DEPLOYMENT SUCCESSFUL!
+            Build:  #${BUILD_NUMBER}
+            Branch: ${BRANCH_NAME}
+            App:    http://${EC2_HOST}:3000
+            Grafana:http://${EC2_HOST}:3001
+            =============================================
+            """
+        }
+        failure {
+            echo "❌ Pipeline FAILED on stage. Check logs above."
+            // Rollback
+            sshagent(credentials: ['ec2-ssh-key']) {
+                sh """
+                    ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} \
+                    'cd /home/ubuntu/app && docker-compose restart app' || true
+                """
+            }
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

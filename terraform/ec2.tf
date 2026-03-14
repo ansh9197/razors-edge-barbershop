@@ -155,17 +155,8 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 # ── EC2 Instance ──────────────────────────────────────────
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # Canonical (Ubuntu)
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-22.04-amd64-server-*"]
-  }
-}
-
 resource "aws_instance" "app_server" {
-  ami                    = data.aws_ami.ubuntu.id
+  ami                    = "ami id of the os" // add ami id of the os you are using 
   instance_type          = var.instance_type
   key_name               = aws_key_pair.app_key.key_name
   vpc_security_group_ids = [aws_security_group.app_sg.id]
